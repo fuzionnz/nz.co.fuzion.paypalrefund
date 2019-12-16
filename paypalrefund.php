@@ -135,7 +135,7 @@ function paypalrefund_civicrm_entityTypes(&$entityTypes) {
 }
 
 function paypalrefund_civicrm_buildForm($formName, &$form) {
-  if (($formName == 'CRM_Contribute_Form_AdditionalPayment') && !empty($form->_refund)) {
+  if (($formName == 'CRM_Contribute_Form_AdditionalPayment') && ($form->getVar('_paymentType') == 'refund')) {
     // Assumes templates are in a templates folder relative to this file
     $templatePath = realpath(dirname(__FILE__)."/templates");
     // Add the field element in the form

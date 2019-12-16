@@ -102,8 +102,8 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
     $trxnDetails = $this->doQuery($params);
     $args = [];
     $this->initialize($args, 'RefundTransaction');
-    $args['amt'] = $params['total_amount'];
-    $args['REFUNDTYPE'] = ($params['total_amount'] == $trxnDetails['net_amount']) ? 'full' : 'partial';
+    $args['amt'] = abs($params['total_amount']);
+    $args['REFUNDTYPE'] = abs(($params['total_amount']) == $trxnDetails['net_amount']) ? 'full' : 'partial';
     $args['CURRENCYCODE'] = $params['currency'];
     $args['TRANSACTIONID'] = $params['trxn_id'];
     $result = $this->invokeAPI($args);
@@ -119,7 +119,6 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
     }
     return FALSE;
   }
-
 
   /**
    * Helper function to check which payment processor type is being used.
@@ -399,7 +398,6 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
    * @throws \Civi\Payment\Exception\PaymentProcessorException
    */
   public function doExpressCheckout(&$params) {
-    $statuses = CRM_Contribute_BAO_Contribution::buildOptions('contribution_status_id');
     if (!empty($params['is_recur'])) {
       return $this->createRecurringPayments($params);
     }
@@ -426,7 +424,6 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
     }
 
     /* Success */
-
     $params['trxn_id'] = $result['transactionid'];
     $params['gross_amount'] = $result['amt'];
     $params['fee_amount'] = $result['feeamt'];
@@ -438,10 +435,10 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
     $params['pending_reason'] = $result['pendingreason'];
     if (!empty($params['is_recur'])) {
       // See comment block.
-      $params['payment_status_id'] = array_search('Pending', $statuses);
+      $params['payment_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Pending');
     }
     else {
-      $params['payment_status_id'] = array_search('Completed', $statuses);
+      $params['payment_status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Contribute_BAO_Contribution', 'contribution_status_id', 'Completed');
     }
     return $params;
   }
@@ -1141,12 +1138,6 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
 
     if ($outcome != 'success' && $outcome != 'successwithwarning') {
       throw new PaymentProcessorException("{$result['l_shortmessage0']} {$result['l_longmessage0']}");
-      $e = CRM_Core_Error::singleton();
-      $e->push($result['l_errorcode0'],
-        0, NULL,
-        "{$result['l_shortmessage0']} {$result['l_longmessage0']}"
-      );
-      return $e;
     }
 
     return $result;
